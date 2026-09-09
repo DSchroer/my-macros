@@ -291,6 +291,12 @@ static void amount_down_handler(ClickRecognizerRef recognizer, void *context) {
 static void amount_toggle_fine_handler(ClickRecognizerRef recognizer, void *context) {
   s_fine_mode = !s_fine_mode;
   amount_update_text();
+  // Briefer than the log-confirmation pulse so the two are distinguishable
+  static const uint32_t durations[] = {40};
+  vibes_enqueue_custom_pattern((VibePattern) {
+    .durations = durations,
+    .num_segments = 1,
+  });
 }
 
 static void amount_select_handler(ClickRecognizerRef recognizer, void *context) {

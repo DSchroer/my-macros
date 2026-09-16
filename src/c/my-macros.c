@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include <message_keys.auto.h>
 
 #define GOAL_PROTEIN 200
 #define GOAL_CARBS   560
@@ -75,12 +76,26 @@ static int today_key(void) {
   return (t->tm_year + 1900) * 10000 + (t->tm_mon + 1) * 100 + t->tm_mday;
 }
 
+static void send_totals(void) {
+  DictionaryIterator *iter;
+  if (app_message_outbox_begin(&iter) != APP_MSG_OK) {
+    return;
+  }
+  dict_write_int32(iter, MESSAGE_KEY_PROTEIN, s_totals[MACRO_PROTEIN]);
+  dict_write_int32(iter, MESSAGE_KEY_CARBS, s_totals[MACRO_CARBS]);
+  dict_write_int32(iter, MESSAGE_KEY_FAT, s_totals[MACRO_FAT]);
+  dict_write_int32(iter, MESSAGE_KEY_WATER, s_totals[MACRO_WATER]);
+  dict_write_int32(iter, MESSAGE_KEY_DAY, today_key());
+  app_message_outbox_send();
+}
+
 static void save_state(void) {
   persist_write_int(KEY_PROTEIN, s_totals[MACRO_PROTEIN]);
   persist_write_int(KEY_CARBS, s_totals[MACRO_CARBS]);
   persist_write_int(KEY_FAT, s_totals[MACRO_FAT]);
   persist_write_int(KEY_WATER, s_totals[MACRO_WATER]);
   persist_write_int(KEY_DAY, today_key());
+  send_totals();
 }
 
 static void load_state(void) {
@@ -354,9 +369,17 @@ static void amount_window_unload(Window *window) {
 
 // ---- App lifecycle ----
 
+// The phone JS pings on launch so it can capture totals logged while it was not running.
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+  send_totals();
+}
+
 static void init(void) {
   load_state();
   check_day_rollover();
+
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_open(64, 64);
 
   s_main_window = window_create();
   window_set_click_config_provider(s_main_window, main_click_config);

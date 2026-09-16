@@ -16,7 +16,14 @@
     "watchapp": {
       "watchface": false
     },
-    "messageKeys": [],
+    "capabilities": ["configurable"],
+    "messageKeys": [
+      "PROTEIN",
+      "CARBS",
+      "FAT",
+      "WATER",
+      "DAY"
+    ],
     "resources": {
       "media": [
         {
